@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Distribution / packaging
+*.egg-info/
+
+# Data on input / output 
+data/
+
+# OS-specific
+.DS_Store
