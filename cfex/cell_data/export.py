@@ -1,27 +1,29 @@
 import arrow
-import typing as t
-from pathlib import Path
 import pandas as pd
+from pathlib import Path
+from typing import Union, Optional, Sequence
 from skimage.io import imsave
 from tqdm import tqdm
 
 from cfex.cell_data.geometry import calculate_centroid
 
+# TODO: prepare images for a pipeline run in-memory
+
 
 def save_cell_objects_image_data(
     cell_data: pd.DataFrame,
-    export_path: t.Union[Path, str],
-    include_masks: t.Optional[t.Sequence[str]] = ["nucleus", "outline"],
-    show_progress: t.Optional[bool] = False,
+    export_path: Union[str, Path],
+    include_masks: Optional[Sequence[str]] = ["nucleus", "outline"],
+    show_progress: Optional[bool] = False,
 ):
     """
     Save images of cells within the bounds of regions described in data.
 
-    Parameters 
+    Parameters
     ----------
     cell_data : DataFrame
         DataFrame containing cell polygon, image and label data.
-    export_path : Path or str
+    export_path : str or Path
         Path to the output directory
     include_masks : array-like of str, optional, default ["nucleus", "outline"]
         Sequence of mask types to include in the export.
@@ -34,7 +36,7 @@ def save_cell_objects_image_data(
         Path to the timestamped directory with image files.
     """
     cell_data_iterator = cell_data.iterrows()
-    if show_progress: 
+    if show_progress:
         cell_data_iterator = tqdm(cell_data_iterator)
     cell_images_dirname = Path(f"cells_{arrow.now().isoformat()}")
     cell_images_path = Path(export_path) / cell_images_dirname

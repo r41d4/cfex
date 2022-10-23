@@ -1,9 +1,9 @@
-import typing as t
 import pandas as pd
 import numpy as np
 from skimage.measure import find_contours, regionprops
 from skimage.draw import polygon
 import pyclipper
+from typing import Optional, Sequence
 
 from cfex.cell_data.geometry import calculate_image_center
 
@@ -34,7 +34,7 @@ def create_nucleus_mask(nuclei_labels_image: np.ndarray) -> np.ndarray:
 
 
 def create_cell_expansion_mask(
-    nucleus_mask: np.ndarray, expansion_size: t.Optional[int] = 6
+    nucleus_mask: np.ndarray, expansion_size: Optional[int] = 6
 ) -> np.ndarray:
     """
     Create a mask of cell expansion (area around the nucleus).
@@ -94,8 +94,8 @@ def create_cell_outline_mask(
 
 
 def create_object_masks_data(
-    cell_detected_nucleus_list: t.Sequence[np.ndarray],
-    to_dataframe: t.Optional[bool] = False,
+    cell_detected_nucleus_list: Sequence[np.ndarray],
+    to_dataframe: Optional[bool] = False,
 ):
     """
     Create masks of cell objects.
@@ -142,9 +142,9 @@ def create_object_masks_data(
 
 def create_object_image_data(
     # TODO: exclude undetected cells from running mask creation
-    cell_image_list: t.Sequence[np.ndarray],
-    cell_detected_nucleus_list: t.Sequence[np.ndarray],
-    to_dataframe: t.Optional[bool] = False,
+    cell_image_list: Sequence[np.ndarray],
+    cell_detected_nucleus_list: Sequence[np.ndarray],
+    to_dataframe: Optional[bool] = False,
 ):
     """
     Assemble cell object image data structure with generated masks.

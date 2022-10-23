@@ -22,7 +22,7 @@ def format_feature_name(feature_name: str) -> str:
     Returns
     -------
     str
-        Formatted feature name string. 
+        Formatted feature name string.
 
     >>> format_feature_name("Nucleus: circularity")
     "NucleusCircularity"
@@ -134,7 +134,7 @@ def extract_cell_data(
     data_format: str
         Supported format name.
     extract_measurements: bool, optional, default False
-        Flag for extracting existing cell measurements from data. 
+        Flag for extracting existing cell measurements from data.
 
     Returns
     -------

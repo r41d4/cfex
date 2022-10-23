@@ -1,24 +1,25 @@
-import typing as t
 import numpy as np
 from tqdm import tqdm
+from typing import Union, Optional, Sequence, Tuple, List, Dict 
 
 from cfex.enums import CellDetectionBackend
 from cfex.cell_data.geometry import calculate_image_center
 
 
-def get_cell_box_segmentation_status(cell_box_labels):
+def get_cell_box_segmentation_status(cell_box_labels: np.ndarray) -> bool:
     cell_box_image_center = calculate_image_center(cell_box_labels)
     return bool(cell_box_labels[cell_box_image_center])
 
 
 def _detect_cells_stardist(
-    cell_image_list: t.Sequence[np.ndarray],
-    stash_undetected: t.Optional[bool],
-    show_progress: t.Optional[bool],
-) -> t.Union[t.List[np.ndarray], t.Tuple[t.List[np.ndarray], t.Dict]]:
+    cell_image_list: Sequence[np.ndarray],
+    stash_undetected: Optional[bool],
+    show_progress: Optional[bool],
+) -> Union[List[np.ndarray], Tuple[List[np.ndarray], Dict]]:
     from stardist.plot import render_label
     from csbdeep.utils import normalize
     from stardist.models import StarDist2D
+
     model = StarDist2D.from_pretrained("2D_versatile_he")
     segmented_count = 0
     unsegmented_cell_data = []
@@ -41,7 +42,7 @@ def _detect_cells_stardist(
             unsegmented_cell_data.append(
                 {"id": i, "labeled_image": predictions_overlayed}
             )
-    # TODO: check why cells are correctly segmented by 
+    # TODO: check why cells are correctly segmented by
     # StarDist more often (46 > 43) on smaller cell boxes
     if stash_undetected:
         return (cell_detected_nucleus_list, unsegmented_cell_data)
@@ -49,11 +50,11 @@ def _detect_cells_stardist(
 
 
 def detect_cells(
-    cell_image_list: t.Sequence[np.ndarray],
+    cell_image_list: Sequence[np.ndarray],
     cell_detection_backend: str,
-    stash_undetected: t.Optional[bool] = False,
-    show_progress: t.Optional[bool] = False,
-) -> t.Union[t.List[np.ndarray], t.Tuple[t.List[np.ndarray], t.Dict]]:
+    stash_undetected: Optional[bool] = False,
+    show_progress: Optional[bool] = False,
+) -> Union[List[np.ndarray], Tuple[List[np.ndarray], Dict]]:
     """
     Run cell instance segmentation on a given list of images.
 

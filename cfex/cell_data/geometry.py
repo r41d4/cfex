@@ -1,9 +1,9 @@
-import typing as t
 from cv2 import boundingRect
+from typing import Sequence, Tuple
 import numpy as np
 
 
-def calculate_centroid(object_polygon: t.Sequence) -> np.ndarray:
+def calculate_centroid(object_polygon: Sequence) -> np.ndarray:
     """
     Calculate centroid coordinate of a cell - mean of polygon points coordinates.
 
@@ -27,19 +27,19 @@ def calculate_centroid(object_polygon: t.Sequence) -> np.ndarray:
 
 
 def calculate_bound_transform_coordinates(
-    roi_bounding_box: t.Sequence, point_coordinates: t.Sequence
-) -> t.Tuple[int]:
+    roi_bounding_box: Sequence, point_coordinates: Sequence
+) -> Tuple[int]:
     """
     Calculate the coordinates of a point in a coordinate system where
     the origin is at the upper-left corner of a given ROI.
 
-    Returns a tuple with transformed x, y coordinates of the cell point 
+    Returns a tuple with transformed x, y coordinates of the cell point
     relative to the local coordinate system of the bounding box.
 
     Parameters
     ----------
     roi_bounding_box : array-like
-        Sequence, first two numbers of which are x, y coordinates of 
+        Sequence, first two numbers of which are x, y coordinates of
         an upper left corner of a bounding box.
     point_coordinates: array-like
         Two-element sequence with x, y coordinates of the cell point.
@@ -56,11 +56,11 @@ def calculate_bound_transform_coordinates(
     return transformed_x, transformed_y
 
 
-def calculate_roi_bounding_box(object_polygons: t.Sequence) -> t.Tuple[int]:
+def calculate_roi_bounding_box(object_polygons: Sequence) -> Tuple[int]:
     """
     Calculate a minimum bounding box for all objects with given polygons.
 
-    Returns a tuple with x, y coordinate of a bounding box (relative to WSI origin coordinates), 
+    Returns a tuple with x, y coordinate of a bounding box (relative to WSI origin coordinates),
     its width and its height.
 
     Parameters
@@ -68,11 +68,11 @@ def calculate_roi_bounding_box(object_polygons: t.Sequence) -> t.Tuple[int]:
     object_polygons : array-like
         Sequence of two-dimensional arrays with x and y coordinates of polygons.
 
-    Returns 
+    Returns
     -------
     tuple
-        Tuple with x and y coordinate of the upper left corner of the bounding box, 
-        its width and its height. 
+        Tuple with x and y coordinate of the upper left corner of the bounding box,
+        its width and its height.
     """
     X = []
     Y = []
@@ -90,11 +90,13 @@ def calculate_roi_bounding_box(object_polygons: t.Sequence) -> t.Tuple[int]:
     return roi_bounding_box
 
 
-def calculate_cell_roi_bounding_box(cell_point_coordinates: t.Sequence, bounding_box_margin: int) -> t.Tuple[int]:
+def calculate_cell_roi_bounding_box(
+    cell_point_coordinates: Sequence, bounding_box_margin: int
+) -> Tuple[int]:
     """
     Calculate a bounding box for a cell point with a given distance margin.
 
-    Returns a tuple with x, y coordinate of a bounding box (relative to WSI origin coordinates), 
+    Returns a tuple with x, y coordinate of a bounding box (relative to WSI origin coordinates),
     its width and its height.
 
     Parameters
@@ -107,8 +109,8 @@ def calculate_cell_roi_bounding_box(cell_point_coordinates: t.Sequence, bounding
     Returns
     ------
     tuple
-        Tuple with x, y coordinate of the upper left corner of the bounding box, 
-        its width and its height. 
+        Tuple with x, y coordinate of the upper left corner of the bounding box,
+        its width and its height.
     """
     cell_point_x, cell_point_y = cell_point_coordinates
     return (
@@ -119,7 +121,7 @@ def calculate_cell_roi_bounding_box(cell_point_coordinates: t.Sequence, bounding
     )
 
 
-def calculate_image_center(image: np.ndarray) -> t.Tuple[int]:
+def calculate_image_center(image: np.ndarray) -> Tuple[int]:
     """
     Calculate coordinates of the center of the image.
 

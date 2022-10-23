@@ -1,21 +1,21 @@
-import typing as t
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
 import slideio as sio
 
+from typing import Optional, Union, List
 from cfex.enums import CellImageLoadBackend
 from cfex.cell_data.geometry import calculate_centroid, calculate_cell_roi_bounding_box
 
 
 def _load_cell_images_slideio(
-    wsi_path: t.Union[str, Path],
+    wsi_path: str,
     cell_data: pd.DataFrame,
-    bounding_box_margin: t.Optional[int],
-    show_progress: t.Optional[bool],
-) -> t.List:
-    slide = sio.open_slide(str(wsi_path), "SVS")
+    bounding_box_margin: Optional[int],
+    show_progress: Optional[bool],
+) -> List[np.ndarray]:
+    slide = sio.open_slide(wsi_path, "SVS")
     scene = slide.get_scene(0)
     cell_data_iterable = cell_data.iterrows()
     if show_progress:
@@ -34,14 +34,14 @@ def _load_cell_images_slideio(
 
 
 def load_cell_images(
-    wsi_path: t.Union[str, Path],
+    wsi_path: Union[str, Path],
     cell_data: pd.DataFrame,
     cell_image_load_backend: str,
-    bounding_box_margin: t.Optional[int] = 50,
-    show_progress: t.Optional[bool] = False,
-) -> t.List[np.ndarray]:
+    bounding_box_margin: Optional[int] = 50,
+    show_progress: Optional[bool] = False,
+) -> List[np.ndarray]:
     """
-    Load WSI regions containing given cells to memory. 
+    Load WSI regions containing given cells to memory.
     Regions are represented as cell bounding boxes defined by a given margin.
 
     Returns a list of cell images.
@@ -65,7 +65,9 @@ def load_cell_images(
         List containing cell images.
     """
     if cell_image_load_backend in CellImageLoadBackend.values():
-        load_cell_images_func = globals()[f"_load_cell_images_{cell_image_load_backend}"]
+        load_cell_images_func = globals()[
+            f"_load_cell_images_{cell_image_load_backend}"
+        ]
         return load_cell_images_func(
-            wsi_path, cell_data, bounding_box_margin, show_progress
+            str(wsi_path), cell_data, bounding_box_margin, show_progress
         )
