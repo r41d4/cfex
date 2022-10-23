@@ -1,23 +1,24 @@
-import typing as t
 import os
 import json
 from tqdm import tqdm
 from pathlib import Path
 import pandas as pd
+from typing import Union, List
 
 from cfex.enums import CellFeaturesBackend
 
 
-def _prepare_data_cellprofiler(cell_images_path):
+# TODO: refactor batch processing
+
+
+def _prepare_data_cellprofiler(cell_images_path: Path) -> List:
     single_batch = {
-        "png": [path.as_uri() for path in list(Path(cell_images_path).glob("*.png"))],
+        "png": [path.as_uri() for path in list(cell_images_path.glob("*.png"))],
         "tif_nucleus": [
-            path.as_uri()
-            for path in list(Path(cell_images_path).glob("*NucleusMask.tif"))
+            path.as_uri() for path in list(cell_images_path.glob("*NucleusMask.tif"))
         ],
         "tif_outline": [
-            path.as_uri()
-            for path in list(Path(cell_images_path).glob("*OutlineMask.tif"))
+            path.as_uri() for path in list(cell_images_path.glob("*OutlineMask.tif"))
         ],
     }
     batches = [single_batch]
@@ -33,7 +34,7 @@ def _prepare_data_cellprofiler(cell_images_path):
     return batches
 
 
-def _run_pipeline_cellprofiler(batches, pipeline_path, output_path):
+def _run_pipeline_cellprofiler(batches: List, pipeline_path: Path, output_path: Path):
     import cellprofiler_core.pipeline
     import cellprofiler_core.preferences
     import cellprofiler_core.utilities.java
@@ -42,7 +43,7 @@ def _run_pipeline_cellprofiler(batches, pipeline_path, output_path):
     cellprofiler_core.utilities.java.start_java()
     output_path_pipeline = output_path / "pipeline"
     output_path_pipeline.mkdir(exist_ok=True)
-    print(f":: Running pipeline: {Path(pipeline_path).name}...")
+    print(f":: Running pipeline: {pipeline_path.name}...")
     for batch in tqdm(batches):
         pipeline = cellprofiler_core.pipeline.Pipeline()
         pipeline.load(pipeline_path)
@@ -93,7 +94,7 @@ def _run_pipeline_cellprofiler(batches, pipeline_path, output_path):
     return pipeline_output
 
 
-def _filter_data_cellprofiler(batches, output_path):
+def _filter_data_cellprofiler(batches: List, output_path: Path):
     output_path_filtered = output_path / "filtered"
     output_path_filtered.mkdir(exist_ok=True)
     output_path_pipeline = output_path / "pipeline"
@@ -144,9 +145,9 @@ def _filter_data_cellprofiler(batches, output_path):
 # TODO: load images from memory into the pipeline without exporting to files separately
 # TODO: remove batch loading and refactor error reporting to account for different culprits other than unfinished runs
 def _extract_measurements_cellprofiler(
-    cell_images_path,
-    output_path: t.Union[Path, str],
-    pipeline_path: t.Union[Path, str],
+    cell_images_path: Path,
+    output_path: Path,
+    pipeline_path: Path,
 ):
     batches = _prepare_data_cellprofiler(cell_images_path=cell_images_path)
     pipeline_output = _run_pipeline_cellprofiler(
@@ -156,17 +157,17 @@ def _extract_measurements_cellprofiler(
 
 
 def extract_measurements(
-    cell_images_path,
-    feature_extraction_backend,
-    output_path,
-    cell_profiler_pipeline_path,
+    cell_images_path: Union[str, Path],
+    feature_extraction_backend: str,
+    output_path: Union[str, Path],
+    cell_profiler_pipeline_path: Union[str, Path],
 ):
     if feature_extraction_backend in CellFeaturesBackend.values():
         extract_measurements_func = globals()[
             f"_extract_measurements_{feature_extraction_backend}"
         ]
         return extract_measurements_func(
-            cell_images_path=cell_images_path,
-            output_path=output_path,
-            pipeline_path=cell_profiler_pipeline_path,
+            cell_images_path=Path(cell_images_path),
+            output_path=Path(output_path),
+            pipeline_path=Path(cell_profiler_pipeline_path),
         )
