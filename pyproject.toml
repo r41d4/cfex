@@ -42,10 +42,6 @@ dependencies = [
     "csbdeep==0.6.3",
     "stardist==0.8.2",
     "pyclipper==1.3.0",
-]
-
-[project.optional-dependencies]
-cellprofiler = [
     "cellprofiler==4.2.1",
     "pyzmq==18.0.1",
     "boto3==1.22.1",
