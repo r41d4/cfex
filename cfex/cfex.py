@@ -17,8 +17,8 @@ from cfex.feature_extraction.extract import extract_measurements
 
 # TODO: implement an alternative way to call this function
 def load_data(
-    wsi_path: Path,
-    cell_data_path: Path,
+    image_path: Path,
+    metadata_path: Optional[str],
     size: Optional[int],
     cell_image_load_backend: str,
     bounding_box_margin: Optional[int] = 50,
@@ -27,32 +27,44 @@ def load_data(
 ):
     verbose_print(
         "[loading input data]",
-        ":: WSI path:",
-        wsi_path,
-        ":: Cell data path:",
-        cell_data_path,
+        ":: Image path:",
+        image_path,
         sep="\n",
     )
-    wsi_path, cell_data_path = Path(wsi_path).resolve(), Path(cell_data_path).resolve()
-    wsi_name = wsi_path.stem.split(".")[0]
-    verbose_print(":: Extracting cell data... ", end="", flush=True)
-    with open(cell_data_path) as cell_data:
-        cell_data = extract_cell_data(
-            cell_data, data_format="qupath", extract_measurements=extract_measurements
-        )[:size]
-        cell_data["WSI"] = wsi_name
-        verbose_print("Done!")
-    verbose_print(f":: Cell object count: {len(cell_data.index)}")
-    verbose_print(
-        f":: Loading WSI regions defined by a {bounding_box_margin * 2}x{bounding_box_margin * 2} pixels bounding box...",
-    )
-    cell_image_list = load_cell_images(
-        wsi_path=wsi_path,
-        cell_data=cell_data,
-        cell_image_load_backend="slideio",
-        bounding_box_margin=bounding_box_margin,
-        show_progress=not silent,
-    )
+    image_path = Path(image_path).resolve()
+    wsi_name = image_path.stem.split(".")[0]
+    if metadata_path:
+        metadata_path = Path(metadata_path).resolve()
+        verbose_print(":: Image metadata path:", metadata_path, sep="\n")
+        verbose_print(":: Extracting cell data... ", end="", flush=True)
+        with open(metadata_path) as cell_data:
+            cell_data = extract_cell_data(
+                cell_data,
+                data_format="qupath",
+                extract_measurements=extract_measurements,
+            )[:size]
+            cell_data["WSI"] = wsi_name
+            verbose_print("Done!")
+        verbose_print(f":: Cell object count: {len(cell_data.index)}")
+        verbose_print(
+            f":: Loading WSI regions defined by a {bounding_box_margin * 2}x{bounding_box_margin * 2} pixels bounding box...",
+        )
+        cell_image_list = load_cell_images(
+            image_path=image_path,
+            cell_data=cell_data,
+            cell_image_load_backend="slideio",
+            bounding_box_margin=bounding_box_margin,
+            show_progress=not silent,
+        )
+    else: 
+        cell_data = None
+        cell_image_list = load_cell_images(
+            image_path=image_path,
+            cell_data=cell_data,
+            cell_image_load_backend=None,
+            bounding_box_margin=bounding_box_margin,
+            show_progress=not silent,
+        )
     return cell_data, cell_image_list
 
 
@@ -75,7 +87,7 @@ def get_segmentation_data(cell_image_list, cell_detection_backend, silent=True):
     return cell_detected_nucleus_list, unsegmented_cell_data
 
 
-def get_image_object_data(cell_image_list, cell_detected_nucleus_list, silent=True):
+def get_object_mask_data(cell_image_list, cell_detected_nucleus_list, silent=True):
     verbose_print(
         "[object mask generation]", ":: Creating cell object masks...", sep="\n"
     )
@@ -114,19 +126,18 @@ def extract_features(
 
 @click.command()
 @click.option(
-    "-w",
-    "--wsi",
-    prompt="WSI path",
+    "-i",
+    "--image_path",
     type=click.Path(resolve_path=True, exists=True, file_okay=True),
     required=False,
-    help="Path to the WSI file",
+    help="Path to the image file",
 )
 @click.option(
-    "-d",
-    "--data",
+    "-m",
+    "--metadata_path",
     type=click.Path(resolve_path=True, exists=True, file_okay=True),
-    prompt="Cell object data file path",
-    help="Path to the cell object data file",
+    required=False,
+    help="Path to the image metadata file",
 )
 @click.option(
     "-s",
@@ -159,10 +170,9 @@ def extract_features(
     "--cell-profiler-pipeline-path",
     type=click.Path(resolve_path=True, exists=True, file_okay=True),
     required=False,
-    help="Path to the cell profiler pipeline file",
+    help="Path to the Cell Profiler pipeline file",
 )
 @click.option(
-    "-m",
     "--measurement-extraction",
     is_flag=True,
     default=False,
@@ -175,8 +185,8 @@ def extract_features(
     help="Suppress messages when going through processing stages",
 )
 def run_extraction(
-    wsi,
-    data,
+    image_path,
+    metadata_path,
     size,
     measurement_extraction,
     protocol,
@@ -188,18 +198,25 @@ def run_extraction(
     """Extract features from cell data"""
     global verbose_print
     verbose_print = print if not silent else lambda *args, **kwargs: None
+    image_path = Path(image_path)
+    cell_image_load_backend = None
+    if image_path.suffix == ".svs":
+        cell_image_load_backend = "slideio"
     cell_data, cell_image_list = load_data(
-        wsi_path=wsi,
-        cell_data_path=data,
+        image_path=image_path,
+        metadata_path=metadata_path,
         size=size,
-        cell_image_load_backend="slideio",
+        cell_image_load_backend=cell_image_load_backend,
         extract_measurements=measurement_extraction,
         silent=silent,
     )
     cell_detected_nucleus_list, _ = get_segmentation_data(
         cell_image_list, cell_detection_backend="stardist", silent=silent
     )
-    image_object_data = get_image_object_data(
+    # TODO: from this point there should not be any differences
+    # between detection in whole images/ROI and detection in 
+    # cell boxes
+    image_object_data = get_object_mask_data(
         cell_image_list=cell_image_list,
         cell_detected_nucleus_list=cell_detected_nucleus_list,
         silent=silent,
