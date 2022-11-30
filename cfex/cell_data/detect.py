@@ -4,6 +4,8 @@ from typing import Union, Optional, Sequence, Tuple, List, Dict
 
 from cfex.enums import CellDetectionBackend
 from cfex.cell_data.geometry import calculate_image_center
+from skimage.io import imsave
+import imageio
 
 
 def get_cell_box_segmentation_status(cell_box_labels: np.ndarray) -> bool:
@@ -24,29 +26,41 @@ def _detect_cells_stardist(
     segmented_count = 0
     unsegmented_cell_data = []
     cell_detected_nucleus_list = []
-    cell_image_iterable = enumerate(cell_image_list)
-    if show_progress:
-        cell_image_iterable = tqdm(cell_image_iterable)
-    for i, image in cell_image_iterable:
+    if len(cell_image_list) == 1:
+        image = cell_image_list[0]
         labels, _ = model.predict_instances(
             normalize(image, 1, 99.8, axis=(0, 1, 2)),
             show_tile_progress=False,
             verbose=False,
         )
-        segmentation_status = get_cell_box_segmentation_status(labels)
-        cell_detected_nucleus_list.append(labels)
-        if segmentation_status:
-            segmented_count += 1
-        else:
-            predictions_overlayed = render_label(labels, img=image)
-            unsegmented_cell_data.append(
-                {"id": i, "labeled_image": predictions_overlayed}
+        imsave("test.png", render_label(labels, image))
+        # imsave("test.png", image)
+        return labels
+    else: 
+        cell_image_iterable = enumerate(cell_image_list)
+        if show_progress:
+            cell_image_iterable = tqdm(cell_image_iterable)
+        for i, image in cell_image_iterable:
+            labels, _ = model.predict_instances(
+                normalize(image, 1, 99.8, axis=(0, 1, 2)),
+                show_tile_progress=False,
+                verbose=False,
             )
-    # TODO: check why cells are correctly segmented by
-    # StarDist more often (46 > 43) on smaller cell boxes
-    if stash_undetected:
-        return (cell_detected_nucleus_list, unsegmented_cell_data)
-    return cell_detected_nucleus_list
+            segmentation_status = get_cell_box_segmentation_status(labels)
+            cell_detected_nucleus_list.append(labels)
+            if segmentation_status:
+                segmented_count += 1
+            else:
+                predictions_overlayed = render_label(labels, img=image)
+                unsegmented_cell_data.append(
+                    {"id": i, "labeled_image": predictions_overlayed}
+                )
+        # TODO: check why cells are correctly segmented by
+        # StarDist more often (46 > 43) on smaller cell boxes
+        if stash_undetected:
+            return (cell_detected_nucleus_list, unsegmented_cell_data)
+        return cell_detected_nucleus_list
+
 
 
 def detect_cells(
