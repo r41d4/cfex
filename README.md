@@ -4,8 +4,6 @@
 
 ## Overview
 
-CFEX provides a number of morphometric features extracted from segmented nuclei in a tissue image to be used in your research without any prior annotation work or model training.
-
 Program takes two files as input in order to extract features from cell nuclei:
 
 - image of H&E stained tissue in TIFF or SVS format;
